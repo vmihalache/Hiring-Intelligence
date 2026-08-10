@@ -1,0 +1,10 @@
+{
+  "intent": "compare_remote_hiring",
+  "result": {
+    "Remote EU hiring": 12,
+    "Domestic hiring": 87
+  },
+  "survey": {
+    "Recruiters saying remote hiring is common": "78%"
+  }
+}

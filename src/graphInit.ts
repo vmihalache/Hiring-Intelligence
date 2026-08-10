@@ -1,10 +1,10 @@
- import express, { Request, Response } from "express";
+import express, { Request, Response } from "express";
+import { trend, contradictory } from "./mockedResponses/mockedResponses";
 
 import { intelligenceGraph } from "./graphBuilder";
-
 // Create an Express application
 const app = express();
-
+app.use(express.json());
 // Specify the port number for the server
 const port: number = 3008;
 
@@ -12,10 +12,24 @@ app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
 
-app.get("/mockJson", async (req: Request, res: Response) => {
+app.post("/mockJson", async (req: Request, res: Response) => {
   // Execute the Graph!
+  console.log("Received request body:");
+  console.log(req.body);
+  console.log(Object.keys(req.body));
   try {
-    const result = await intelligenceGraph.invoke({});
+    const incomingThreadId = req.headers["threadid"] || req.headers["thread_id"]; 
+
+    const result = await intelligenceGraph.invoke(
+      {
+    statistics: req.body.statistics,
+    userQuestion: req.body.userQuestion,
+  }, 
+  {
+    configurable: {
+        thread_id: incomingThreadId
+    }
+});
     console.log("\n=====START======");
     console.log("Graph result: ", result);
     console.log("\n=====END======");

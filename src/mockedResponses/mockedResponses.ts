@@ -19,15 +19,15 @@ export const trend = {
   "country": "Romania",
   "metric": "Youth unemployment",
   "years": "2018-2025",
-  "result": {
-    "2018": 16.1,
-    "2019": 15.7,
-    "2020": 19.2,
-    "2021": 18.4,
-    "2022": 17.8,
-    "2023": 16.3,
-    "2024": 15.4,
-    "2025": 14.9
+  "values": {
+    "2018": 16,
+    "2019": 17,
+    "2020": 16,
+    "2021": 18,
+    "2022": 17,
+    "2023": 18,
+    "2024": 19,
+    "2025": 16
   }
 }
 export const weirdData = {
@@ -49,6 +49,16 @@ export const weirdData = {
   }
 }
 export const contradictory = {
+  "intent": "compare_remote_hiring",
+  "result": {
+    "Remote EU hiring": 12,
+    "Domestic hiring": 87
+  },
+  "survey": {
+    "Recruiters saying remote hiring is common": "78%"
+  }
+}
+export const randomQuestion = {
   "intent": "compare_remote_hiring",
   "result": {
     "Remote EU hiring": 12,

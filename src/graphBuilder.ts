@@ -1,11 +1,21 @@
-import { StateGraph, START, END, StateGraphArgs } from "@langchain/langgraph";
-import { writer,graphStateChannelsChannels } from "./stateManagement";
+import { StateGraph, START, END, StateGraphArgs, MemorySaver } from "@langchain/langgraph";
+import { writer, contextLoader, graphStateChannelsChannels, planner,checkQuestionNewStatistics, shouldContinue } from "./stateManagement";
 
-const graphBuilder = new StateGraph({ channels: graphStateChannelsChannels }) // Add our nodes to the Graph
+export const graphBuilder = new StateGraph({ channels: graphStateChannelsChannels }) // Add our nodes to the Graph
   
+  .addNode("contextLoader", contextLoader)
   .addNode("writer", writer)
-  .addEdge(START, "writer")
-  .addEdge("writer", END);
+  .addNode("planner", planner)
+  .addNode("checkQuestionNewStatistics", checkQuestionNewStatistics)
+  .addEdge(START, "contextLoader")
+  .addEdge("contextLoader", "checkQuestionNewStatistics")
+  .addEdge("planner", "writer")
+  .addEdge("writer", END)
+  .addConditionalEdges('checkQuestionNewStatistics', shouldContinue, {
+    planner: 'planner',
+    writer: 'writer',
+  })
+ const checkpointer = new MemorySaver(); 
+export const intelligenceGraph = graphBuilder.compile( {checkpointer});
 
-// Compile the Graph
-export const intelligenceGraph = graphBuilder.compile();
+
