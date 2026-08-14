@@ -21,6 +21,6 @@ export const classifyMessage = {
 `
 }
 export const questionAndJson = {
-        "question": "How does the employment rate in Romania compare to Germany and France from 2020 to 2026?",
+        "question": "How does the employment rate in Romania compare to Germany and France from 2025 to 2026?",
         "jsonWithStatisticsData": jsonWithStatisticsData,
     }
