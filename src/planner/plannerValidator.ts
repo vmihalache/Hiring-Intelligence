@@ -67,6 +67,9 @@ export const plannerService = async () => {
                     console.log(arr)
                 }
             }
+            else {
+                    arr[index] = Number(val)
+                }
             if (typeof val === "string" && (val.includes("current"))) {
                 arr[0] = 2026
             }
