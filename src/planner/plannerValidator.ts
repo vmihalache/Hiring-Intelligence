@@ -1,8 +1,11 @@
 import {checkResponseMethod } from "./agentCall";
+import { parse } from 'numbers-from-words';
+import wordsToNumbers from 'words-to-numbers';
 
 type PlannerResponse = {
     countries?: string[];
-    years?: number[];
+    // years can be a number, a string, or an array of numbers after normalization
+    years?: (number | string | number[])[];
     metric?: string;
     valid?: boolean;
     reason?: string;
@@ -18,12 +21,17 @@ const MaximumCountriesSpecification = {
 };
 
 const MinimumYearSpecification = {
-    check: (jsonReturnedByAgent: PlannerResponse | undefined) => {
-        const years = jsonReturnedByAgent?.years ?? [];
+      check: (jsonReturnedByAgent: PlannerResponse | undefined) => {
+        const rawYears = jsonReturnedByAgent?.years ?? [];
         console.log("=== Years from Agent Response ===");
-        console.log(years);
-        return Math.min(...years) > 2024;
-    }
+        console.log(rawYears);
+
+        function isNumberArray(yearsProp: unknown[]): yearsProp is number[] {
+            return yearsProp.every(item => typeof item === 'number' && !Number.isNaN(item));
+        }
+        if (!isNumberArray(rawYears) || rawYears.length === 0) return false;
+        return Math.min(...rawYears) > 2024;
+}
 };
 
 const MetricExistsSpecification = {
@@ -33,15 +41,52 @@ const MetricExistsSpecification = {
 };
 export const plannerService = async () => {
 
-    const jsonReturnedByAgent = await checkResponseMethod() ?? {
+    const jsonReturnedByAgent: PlannerResponse = await checkResponseMethod() ?? {
         countries: [],
         years: [],
         metric: "",
         valid: false,
         reason: "No valid response from agent."
     };
+    const jsonNormalizer = (jsonToUse: PlannerResponse) => {
+        jsonToUse.years?.forEach((val, index, arr) => {
+            if (typeof val === "string" && (val.includes("last") || val.includes("previous")
+            || val.includes("past") )) {
+            console.log(val)
+                let convertedVal = String(wordsToNumbers(val))
+                const match = convertedVal.match(/\d+/) 
+                console.log("match")
+                console.log(typeof convertedVal)
+                console.log(match)
+                console.log(convertedVal)
+                if (match) {
+                    console.log(2026 - Number(match[0]))
+                    console.log(Array.from({ length: Number(match[0]) }, (_, index) => index + (2026  - Number(match[0]))))
+                    let modifiedYearArray = Array.from({ length: Number(match[0]) }, (_, index) => index + (2026  - Number(match[0])+1))
+                    arr.splice(index, 1, ...modifiedYearArray);
+                    console.log(arr)
+                }
+            }
+            if (typeof val === "string" && (val.includes("current"))) {
+                arr[0] = 2026
+            }
+
+            if (typeof val === "string" && val.includes("ago")) {
+                console.log("ago")
+                let agoYear = String(wordsToNumbers(val)).match(/\d+/)
+                if (agoYear) {
+                console.log(agoYear)
+                arr[0] = 2026 - Number(agoYear[0])
+            }
+        }
+            else {
+            return arr
+            }
+        });
+    }
     console.log("jsonReturnedByAgent")
     console.log(jsonReturnedByAgent)
+    jsonNormalizer(jsonReturnedByAgent)
     const plannerValidator = {
     "numberOfCountries": MaximumCountriesSpecification.check(jsonReturnedByAgent), 
     "minimumYear": MinimumYearSpecification.check(jsonReturnedByAgent), 
@@ -52,5 +97,6 @@ export const plannerService = async () => {
     jsonReturnedByAgent.valid = false;
     jsonReturnedByAgent.reason = "Invalid plannerValidator: " + failedRules.map(([rule]) => rule).join(", ");
 }
+
     return jsonReturnedByAgent
 }

@@ -47,7 +47,7 @@ export const basicAgentCall = async (agentMessage: any, content?: string) => {
  let responseText = typeof checkResponse === "string" ? checkResponse : JSON.stringify(checkResponse)
  let jso = JSON.parse(responseText.replace(/```json|```/g, '').trim()).result
  try {
-    jso !=undefined
+    JSON.parse(jso)
     } catch (error) {
         console.error("Error parsing JSON:", error);
         console.error("Response content:", checkResponse);
