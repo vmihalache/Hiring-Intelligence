@@ -48,7 +48,11 @@ const basicAgentCall = async (agentMessage, state, agentObject, contentPath, age
     //     }
     console.log(agentProdEndpoint);
     console.log(agentObject);
-    const agentResponse = await httpGateway_1.httpGateway.fetchData(agentProdEndpoint ?? "http://localhost:11434/api/chat", "POST", agentObject, { "x-goog-api-key": apiKey }, apiKey);
+    if (!agentProdEndpoint) {
+        throw new Error("Missing agentProdEndpoint in basicAgentCall");
+    }
+    const endpoint = agentProdEndpoint;
+    const agentResponse = await httpGateway_1.httpGateway.fetchData(endpoint, "POST", agentObject, { "x-goog-api-key": apiKey }, apiKey);
     console.log(agentResponse);
     return agentResponse.json().then(async (data) => {
         console.log("GEMINI RAW DATA:");
