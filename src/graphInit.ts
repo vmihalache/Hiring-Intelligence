@@ -35,6 +35,6 @@ app.post("/mockJson", async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error occurred while invoking the graph:", error);
   }
-  res.send("Check the console for the output!");
+  // res.send("Check the console for the output!");
   res.json(result);
 });
