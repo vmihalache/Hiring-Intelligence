@@ -165,7 +165,7 @@ export async function checkQuestionNewStatistics(state: GraphState) {
     };  
     console.log("requestPayload")
     console.log(requestPayload)
-    const checkResponse = await basicAgentCall(contextLoaderMessage, state, requestPayload, openrouterContentPath,process.env.openRouterEndpoint, process.env.OPENROUTER_API_KEY);
+    const checkResponse = await basicAgentCall(contextLoaderMessage, state, requestPayload, openrouterContentPath,process.env.OPENROUTEREndpoint, process.env.OPENROUTER_API_KEY);
     // const checkResponse = await basicAgentCall(contextLoaderMessage, state, qwen2bObject, ollamaContentPath, process.env.ProdGroqEndpoint, process.env.GROQ_API_KEY);
     let checkbooleanValue = checkResponse.analysis.trim().toLowerCase();
     let isQuestionRelevanStateValue = checkbooleanValue === "false" ? "plannerService" : "writer";
