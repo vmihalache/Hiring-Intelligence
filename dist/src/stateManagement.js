@@ -48,7 +48,6 @@ const basicAgentCall = async (agentMessage, state, agentObject, contentPath, age
     //     }
     console.log(agentProdEndpoint);
     console.log(agentObject);
-    console.log(apiKey);
     const agentResponse = await httpGateway_1.httpGateway.fetchData(agentProdEndpoint ?? "http://localhost:11434/api/chat", "POST", agentObject, { "x-goog-api-key": apiKey }, apiKey);
     console.log(agentResponse);
     return agentResponse.json().then(async (data) => {
