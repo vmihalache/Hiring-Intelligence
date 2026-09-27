@@ -63,7 +63,6 @@ export const basicAgentCall = async (agentMessage: any, state?: Partial<GraphSta
     //     }
     console.log(agentProdEndpoint)
     console.log(agentObject)
-    console.log(apiKey)
         const agentResponse = await httpGateway.fetchData(agentProdEndpoint ?? "http://localhost:11434/api/chat", "POST", agentObject,  { "x-goog-api-key": apiKey }, apiKey);
         
         console.log(agentResponse)
