@@ -1,0 +1,1 @@
+{"version":3,"file":"httpGateway.d.ts","sourceRoot":"","sources":["../src/httpGateway.ts"],"names":[],"mappings":"AAAA,cAAM,WAAW;;IAGP,SAAS,CAAC,GAAG,EAAE,MAAM,EAAE,MAAM,EAAE,MAAM,EAAE,WAAW,CAAC,EAAE,EAAE,EAAE,YAAY,CAAC,EAAE,EAAE,EAAE,MAAM,CAAC,EAAE,MAAM,GAAG,OAAO,CAAC,GAAG,CAAC;CA2BnH;AACD,eAAO,MAAM,WAAW,aAAoB,CAAC"}

@@ -1,0 +1,1 @@
+{"version":3,"file":"eurostatAPI.d.ts","sourceRoot":"","sources":["../../src/euroStatAPI/eurostatAPI.ts"],"names":[],"mappings":"AAEA,qBAAa,WAAW;IACpB,iBAAiB,EAAE,GAAG,EAAE,CAAK;IAC7B,OAAO,CAAC,EAAE,MAAM,CAAA;gBAEZ,iBAAiB,EAAE,GAAG,EAAE,EACxB,OAAO,EAAE,MAAM;IAKnB,mBAAmB;;;;iBA2BZ,MAAM;sBACD,MAAM;eACb,MAAM;OAqBd;CACA"}
