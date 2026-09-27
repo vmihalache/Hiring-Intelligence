@@ -1,26 +1,26 @@
 import { httpGateway } from "../httpGateway";
 import { classifyMessage, questionAndJson } from "./plannerStaticConsts";
+import {geminiContentPath, geminiObject, openrouterContentPath, openrouterObject} from "../agentData"
+import {basicAgentCall} from '../stateManagement'
+import type { GraphState } from '../stateManagement';
 require('dotenv').config()
 
-let counter = 0
-export const basicAgentCall = async (agentMessage: any, content?: string) => {
-    const messages : any[] = [agentMessage, {role: "user", content: content }]
-    const qwen2bObject = {
-            "model": "qwen/qwen3.6-27b",
-            "messages":messages,
-            "stream": false,
-            "reasoning_format": "hidden"
-        }
+    let counter = 0
+    const agentRunner = async (agentMessage: any, content?: string, state?: GraphState) => {  
+       
+        geminiObject["messages"] = [agentMessage, {role: "user", content: content}]; 
     const getAgentResponse = async () => {
-        const agentResponse = await httpGateway.fetchData(process.env.ProdEndpoint ?? "http://localhost:11434/api/chat", "POST", qwen2bObject);
+        const data = await basicAgentCall(agentMessage, state, geminiObject, geminiContentPath, process.env.ProdGeminiEndpoint, process.env.GEMINI_API_KEY); 
         console.log("=== Agent Response ===");
         // const responseText = await agentResponse.text();
-        // console.log(responseText);
-        return agentResponse.json().then(async (data: { choices?: Array<{ message?: { content?: string }, finish_reason?: string }> }) => {
+        console.log("Agent Response: ", data);
+        // const data: { choices?: Array<{ message?: { content?: string }, finish_reason?: string }> } = JSON.parse(JSON.stringify(agentResponse.analysis));
+        // return agentResponse.analysis.then(async (data: { choices?: Array<{ message?: { content?: string }, finish_reason?: string }> }) => {
             console.log("=== Agent Response Data ===");
-            console.log(data);
-        let finishReason1 = data.choices?.[0]?.finish_reason;
-        let result: string = data.choices?.[0]?.message?.content || "";
+            console.log(data.finishReason1);
+    
+        let finishReason1 = data.finishReason1
+        let result: string = data.analysis || "";
         console.log("=== Agent Response ===");
         console.log("Finish Reason: ", finishReason1);
         console.log("Result: ", result);
@@ -35,17 +35,18 @@ export const basicAgentCall = async (agentMessage: any, content?: string) => {
         else {
             throw new Error("Agent response is empty after multiple attempts.");
         }
-    })}
+    }
     return getAgentResponse();
 }
 
- export const checkResponseMethod = async () => {
- const checkResponse = await basicAgentCall(classifyMessage, JSON.stringify(questionAndJson)); 
+ export const checkResponseMethod = async (state: GraphState) => {
+ const checkResponse = await agentRunner(classifyMessage, JSON.stringify({"userQuestion": state.userQuestion}), state); 
  console.log("=== Check Response ===");
  console.log(checkResponse)  
 
  let responseText = typeof checkResponse === "string" ? checkResponse : JSON.stringify(checkResponse)
  let jso = JSON.parse(responseText.replace(/```json|```/g, '').trim()).result
+// let jso = JSON.parse(responseText).trim().result
  try {
     JSON.parse(jso)
     } catch (error) {

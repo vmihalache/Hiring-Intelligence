@@ -1,12 +1,15 @@
 import {checkResponseMethod } from "./agentCall";
 import { parse } from 'numbers-from-words';
 import wordsToNumbers from 'words-to-numbers';
+import type { GraphState } from '../stateManagement';
+import { plannerServiceWithValidation } from "./plannerIEuroStatIntegration";
+
 
 type PlannerResponse = {
     countries?: string[];
     // years can be a number, a string, or an array of numbers after normalization
     years?: (number | string | number[])[];
-    metric?: string;
+    metrics?: string;
     valid?: boolean;
     reason?: string;
 };
@@ -36,12 +39,12 @@ const MinimumYearSpecification = {
 
 const MetricExistsSpecification = {
     check: (jsonReturnedByAgent: PlannerResponse | undefined) => {
-        return Boolean(jsonReturnedByAgent?.metric);
+        return Boolean(jsonReturnedByAgent?.metrics);
     }
 };
-export const plannerService = async () => {
+export const plannerService = async (state: GraphState) => {
 
-    const jsonReturnedByAgent: PlannerResponse = await checkResponseMethod() ?? {
+    const jsonReturnedByAgent: PlannerResponse = await checkResponseMethod(state) ?? {
         countries: [],
         years: [],
         metric: "",
@@ -100,6 +103,9 @@ export const plannerService = async () => {
     jsonReturnedByAgent.valid = false;
     jsonReturnedByAgent.reason = "Invalid plannerValidator: " + failedRules.map(([rule]) => rule).join(", ");
 }
-
-    return jsonReturnedByAgent
+    console.log("=== Planner Validator Results ===");
+    // console.log(jsonReturnedByAgent)
+    const plannerValidation = await plannerServiceWithValidation(jsonReturnedByAgent, state);
+    console.log(plannerValidation)
+    return plannerValidation
 }

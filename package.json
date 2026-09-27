@@ -21,9 +21,11 @@
   "dependencies": {
     "@langchain/core": "^1.2.1",
     "@langchain/langgraph": "^1.4.7",
+    "country-to-iso": "^1.6.3",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "numbers-from-words": "^0.0.8",
+    "uuid": "^14.0.2",
     "words-to-numbers": "^1.5.1"
   }
 }

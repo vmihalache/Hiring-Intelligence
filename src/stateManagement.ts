@@ -4,38 +4,27 @@ import { countryComparison, trend, contradictory, weirdData } from "./mockedResp
 import { graphBuilder } from "./graphBuilder";
 import { stat } from "node:fs";
 import {intelligenceGraph} from "./graphBuilder"; 
-
+import { v4 as uuidv4 } from "uuid";
+import {qwen2bObject, geminiObject, ollamaContentPath, geminiContentPath, openrouterObject, openrouterContentPath, contextLoaderMessage, writerMessage} from "./agentData"
 require('dotenv').config()
 
-// State type
 export interface GraphState {
-    statistics: Record<string, unknown>;
+    statistics: Array<Record<string, unknown>> | Record<string, unknown>;
     analysis: string;
     userQuestion: string;
-    isQuestionRelevantToStatistics: boolean;
+    isQuestionRelevantToStatistics: "plannerService" | "writer"
 }   
-interface GroqRequest {
 
-    model:string;
-    messages:any[];
-    stream:boolean;
-    reasoning_format:string;
-
-}
 export function shouldContinue(state: GraphState) {
-       return state.isQuestionRelevantToStatistics
-        ? "planner"
-        : "writer";
+    console.log("Routing decision value:", state.isQuestionRelevantToStatistics);
+    return state.isQuestionRelevantToStatistics;
 }
 
 
 export const graphStateChannelsChannels: StateGraphArgs<GraphState>["channels"] = {
     statistics: {
-     value: (currentStatistics, newStatistics) => ({
-    ...currentStatistics,
-    ...newStatistics
-  }),
-  default: () => ({}),
+     value: (currentStatistics, newStatistics) => newStatistics ?? currentStatistics,
+  default: () => []
 },
   analysis: {
     reducer: (_, newAnalysis) => newAnalysis,
@@ -46,155 +35,153 @@ export const graphStateChannelsChannels: StateGraphArgs<GraphState>["channels"] 
     default: () => ""
 },
    isQuestionRelevantToStatistics: {
-    reducer: (_, newIsQuestionRelevantToStatistics: boolean) => newIsQuestionRelevantToStatistics,
-    default: () => true
+    reducer: (_, newIsQuestionRelevantToStatistics: "plannerService" | "writer") => newIsQuestionRelevantToStatistics,
+    default: () => "plannerService"
 }
 }
 
-const basicAgentCall = async (agentMessage: any, state?: GraphState, content?: string) => {
-    // const messages : any[] = [agentMessage, {role: "user", content: JSON.stringify(state?.statistics) + " " + JSON.stringify(state?.userQuestion)}]; 
-       const messages : any[] = [agentMessage, {role: "user", content: content || "" }]
+ const userContent = (state: any) =>`
+    \`\`\`json
+    ${JSON.stringify(state.statistics, null, 2)}
+    \`\`\`
+User Question: ${state?.userQuestion}
+`
+ 
 
-     const qwen2bObject: GroqRequest = {
-            "model": "qwen/qwen3.6-27b",
-            "messages":messages,
-            "stream": false,
-            "reasoning_format": "hidden"
-        }
-        const agentResponse = await httpGateway.fetchData(process.env.ProdEndpoint ?? "http://localhost:11434/api/chat", "POST", qwen2bObject);
-        console.log("=== Agent Response ===");
-        console.log(agentResponse);
-        return agentResponse.json().then((data: { choices?: Array<{ message?: { content?: string } }> }) => {
-              return  data.choices?.[0]?.message?.content
-                // analysis: data.choices?.[0]?.message?.content ?? "No analysis available.",
-                // userQuestion: state?.userQuestion  
-    })
+export const basicAgentCall = async (agentMessage: any, state?: Partial<GraphState>, agentObject?: any, contentPath?: (data: any) => string | Promise<string>, agentProdEndpoint?: string, apiKey?: string) => {
+   
+
+    // const messages : any[] = [agentMessage, {role: "user", content: userContent}]; 
+        // agentObject["messages"] = [agentMessage, {role: "user", content: userContent}]; 
+
+    //  const qwen2bObject: GroqRequest = {
+    //         "model": "qwen/qwen3.6-27b",
+    //         "messages":messages,
+    //         "stream": false,
+    //         "reasoning_format": "hidden",
+    //         "max_tokens": 4000
+    //     }
+    console.log(agentProdEndpoint)
+    console.log(agentObject)
+    console.log(apiKey)
+        const agentResponse = await httpGateway.fetchData(agentProdEndpoint ?? "http://localhost:11434/api/chat", "POST", agentObject,  { "x-goog-api-key": apiKey }, apiKey);
+        
+        console.log(agentResponse)
+        return agentResponse.json().then(async (data: any) => {
+            console.log("GEMINI RAW DATA:");
+            console.dir(data, { depth: null });
+            const content = await contentPath?.(data);
+            console.log("GEMINI EXTRACTED CONTENT:", content);
+            console.log(data?.choices?.[0].finish_reason)
+
+            // const rawContent = data.choices?.[0]?.message?.content ?? data.message?.content ?? "";
+            return {
+                analysis: content?.trim() ?? "No analysis available.",
+                userQuestion: state?.userQuestion,  
+                finishReason1: data?.choices?.[0]?.finish_reason
+                // result: content?.choices?.[0]?.message?.content || ""
+    }
+})
 }
 
-export function planner(state: GraphState) {
-    console.log(`agent response process`);
-    console.log(state)
-    return state
-}
+// export async function planner(state: GraphState) {
+//     console.log("planner is running")
+//     return state
+// }
 const classifyMessage = {
     role: "system",
     content: `
     - Analyze the user question and push the country names, metrics and years into the .
     `
 }
-export const plannerService = async () => {
-  const jsonWithStatisticsData = {
+// export const plannerService = async () => {
+//   const jsonWithStatisticsData = {
 
-  "intent": "compare_hiring",
-  "countries": [
-    "Romania",
-    "Germany"
-  ],
-  "years": [
-    2021,
-    2022,
-    2023,
-    2024
-  ],
-  "metric": "employment_rate",
-  "valid": true,
-  "reason": ""
-}
-    const question = "How does the employment rate in Romania compare to Germany from 2021 to 2024?"
-    const checkResponse = await basicAgentCall(classifyMessage, undefined, question);
-    console.log(checkResponse)
-    return checkResponse
-}
+//   "intent": "compare_hiring",
+//   "countries": [
+//     "Romania",
+//     "Germany"
+//   ],
+//   "years": [
+//     2021,
+//     2022,
+//     2023,
+//     2024
+//   ],
+//   "metric": "employment_rate",
+//   "valid": true,
+//   "reason": ""
+// }
+//     // const question = "How does the employment rate in Romania compare to Germany from 2021 to 2024?"
+//     // const checkResponse = await basicAgentCall(classifyMessage, undefined, question);
+//     await basicAgentCall(classifyMessage, state, ollamaObject, ollamaContentPath, process.env.ProdGroqEndpoint);     
+//     return checkResponse
+// }
 
-const writerMessage = {
-    role: "system",
-    content: `
-    - Only analyze the JSON provided.
-    - If isQuestionRelevantToStatistics is false use the current analysis and ignore the user question
-    - Never invent numbers.
-    - Never estimate missing values.
-    - If information is missing, explicitly say so.
-    - Compare trends before conclusions.
-    - Never mention data that isn't present.
-    - Answer unrelated questions only with data from the analysis.
-    - Dont mention missing data
-    - Describe the overall trend naturally before discussing important changes and dont mention all thee intermediary values
-    - Never overexplain yourself
-`
-}
-const contextLoaderMessage = {
-    role: "system",
-    content: `
-    Given these statistics and this question,should we reuse them or fetch new ones?
-Return only: true or false
-`
-}
 
-export async function contextLoader(state: GraphState){
+
+export async function contextLoader(state: GraphState, config: any){
     console.log("=== ContextLoader ===");
     console.log(state);
-    const history: any[] = [];
-   const config = {
-  configurable: {
-    thread_id: "threadId"
-  }
-};
-    
-        let tryThisOut = intelligenceGraph.getStateHistory(config);
-        console.log("State history iterator:", tryThisOut);
-        for await (const oldState of intelligenceGraph.getStateHistory(config)) {
-            history.push({
-            checkpointId: oldState.config.configurable?.checkpoint_id,
-            values: oldState.values,
-            next: oldState.next, // Nodes that are scheduled to run next (if any)
-            });
-        }
-    console.log("History length:", history.length);
-    console.log(history.length);
-    console.log(history);
-    if (history.length > 1) {
-        // 1. Get the previous step's data from history
-        const pastStatistics = history[1].values.statistics;
-        const pastAnalysis = history[1].values.analysis;
-        
-        // 2. Safely extract your existing array history from state
-        // (No need to filter out current metrics because the reducer preserves them!)
-        // const existingHistory = Array.isArray(state.statistics?.pastHistoryArray) 
-        //     ? state.statistics.pastHistoryArray 
-        //     : [];
+    // const history: any[] = [];
 
-        // 3. Just return the updated array key
-        return {
-            statistics: pastStatistics,
-            analysis: pastAnalysis
-            }
-
-    }
-    
-    return {};
+    //     for await (const oldState of intelligenceGraph.getStateHistory(config)) {
+    //         history.push({
+    //         checkpointId: oldState.config.configurable?.checkpoint_id,
+    //         values: oldState.values,
+    //         next: oldState.next, // Nodes that are scheduled to run next (if any)
+    //         });
+    //     }
+    // console.log("History length:", history.length);
+    // console.log(history.length);
+    // console.log(history);
+    // if (history.length > 1) {
+    //     const pastStatistics = history[1].values.statistics;
+    //     const pastAnalysis = history[1].values.analysis;
+    //     const pastQuestion = history[1].values.userQuestion;
+       return {
+    statistics: state.statistics || {},
+    analysis: state.analysis || "",
+    userQuestion: state.userQuestion
+  };
 }
 export async function checkQuestionNewStatistics(state: GraphState) {
     console.log("=== CheckQuestionNewStatistics ===");
-    console.log(state);
-
-    
-    const checkResponse = await basicAgentCall(contextLoaderMessage, state);
+    console.log(userContent(state))
+    // openrouterObject["messages"] = [contextLoaderMessage, {role: "user", content: userContent(state)}]; 
+    const requestPayload = {
+        ...openrouterObject,
+        messages: [contextLoaderMessage, { role: "user", content: userContent(state) }]
+    };  
+    console.log("requestPayload")
+    console.log(requestPayload)
+    const checkResponse = await basicAgentCall(contextLoaderMessage, state, requestPayload, openrouterContentPath,process.env.openRouterEndpoint, process.env.OPENROUTER_API_KEY);
+    // const checkResponse = await basicAgentCall(contextLoaderMessage, state, qwen2bObject, ollamaContentPath, process.env.ProdGroqEndpoint, process.env.GROQ_API_KEY);
     let checkbooleanValue = checkResponse.analysis.trim().toLowerCase();
-    let isQuestionRelevanStateValue = checkbooleanValue === "true" ? "planner" : "writer";
+    let isQuestionRelevanStateValue = checkbooleanValue === "false" ? "plannerService" : "writer";
+    console.log("what is isQuestionRelevanStateValue")
+    console.log(isQuestionRelevanStateValue)
     return {
        isQuestionRelevantToStatistics: isQuestionRelevanStateValue
     }
 }
 
 export async function writer(state: GraphState) {
-    console.log("=== Writer ===");
-    console.log(state.statistics);
-    console.log(state.analysis);
-    const writerResponse = await basicAgentCall(writerMessage, state);     
+    console.log(state.statistics)
+    console.log("writer is being run")
+    qwen2bObject["messages"] = [writerMessage, {role: "user", content: JSON.stringify(state.statistics)}];
+    // qwen2bObject["messages"] = [writerMessage, {role: "user", content: userContent(state)}]; 
+    console.log(state)
+    console.log(qwen2bObject)
+    const writerResponse = await basicAgentCall(writerMessage, state, qwen2bObject, ollamaContentPath, process.env.ProdGroqEndpoint, process.env.GROQ_API_KEY);    
+    // console.log(writerResponse)
     return {
-        analysis: writerResponse.analysis
+        analysis: writerResponse.analysis,
+        isQuestionRelevantToStatistics: state.isQuestionRelevantToStatistics,
+        userQuestion: state.userQuestion
     }
 }
     
+
 
 

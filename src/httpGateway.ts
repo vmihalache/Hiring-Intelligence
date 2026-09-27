@@ -1,12 +1,16 @@
 class HttpGateway {
     constructor() {
     }
-    async fetchData(url: string, method: string, requestBody?: {}, headersAdded?: {}): Promise<any> {
+    async fetchData(url: string, method: string, requestBody?: {}, headersAdded?: {}, apiKey?: string): Promise<any> {
+         console.log("=== FETCHING ===");
+         console.log("URL:", url);
+         console.log("METHOD:", method);
+         console.log("REQUEST BODY:", requestBody);
         const fetchOptions: RequestInit = {
             method: method,
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+                'Authorization': `Bearer ${apiKey}`,
                 ...headersAdded
             }
         };
