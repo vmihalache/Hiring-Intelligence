@@ -11,14 +11,12 @@ exports.graphBuilder = new langgraph_1.StateGraph({ channels: stateManagement_1.
     .addNode("contextLoader", stateManagement_1.contextLoader)
     .addNode("writer", stateManagement_1.writer)
     .addNode("plannerService", plannerValidator_1.plannerService)
-    .addNode("checkQuestionNewStatistics", stateManagement_1.checkQuestionNewStatistics)
     .addEdge(langgraph_1.START, "contextLoader")
-    .addEdge("contextLoader", "checkQuestionNewStatistics")
-    .addConditionalEdges('checkQuestionNewStatistics', stateManagement_1.shouldContinue, {
-    plannerService: 'plannerService',
-    writer: 'writer',
+    .addEdge("contextLoader", "plannerService")
+    .addConditionalEdges("plannerService", stateManagement_1.shouldContinue, {
+    fetch: 'plannerService',
+    reuse: 'writer',
 })
-    .addEdge("plannerService", "checkQuestionNewStatistics")
     .addEdge("writer", langgraph_1.END);
 const checkpointer = new langgraph_1.MemorySaver();
 exports.intelligenceGraph = exports.graphBuilder.compile({ checkpointer });

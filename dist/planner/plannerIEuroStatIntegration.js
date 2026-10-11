@@ -24,48 +24,36 @@ const plannerServiceWithValidation = async (plannerResult, state) => {
     const euroStatResult = [];
     const getEuRoStatData = async (dataset) => {
         const shuffleArray = Object.keys(dataset).sort(() => Math.random() - 0.5);
-        for (const key of Array.from(shuffleArray.slice(0, 3))) {
+        const euroStatResult = Array.from(shuffleArray.slice(0, 3)).filter((keyFilter) => keyFilter != "keywords").map(key => {
+            let euroStatParamatersLocal = euroStatParamaters.slice();
             const splitKey = key.split("");
-            const getEuroStatResults = async (key) => {
-                if (key != "keywords") {
-                    console.log("key", key);
-                    console.log("euroStatParamaters", euroStatParamaters);
-                    const euroStatAPI = new eurostatAPI_1.EuroStatAPI(euroStatParamaters.join(""), splitKey.join(""));
-                    euroStatResult.push(await euroStatAPI.euroStatApiResponse());
-                }
-            };
             if (splitKey[splitKey.length - 1] === "Q") {
                 splitKey.splice(-2);
-                euroStatParamaters[euroStatParamaters.length - 1] += "-Q1";
-                await getEuroStatResults(key);
-                console.log("euroStatParamaters1", euroStatParamaters);
-                //'&time=2025-Q1'
-                console.log("whatToRemove", euroStatParamaters[euroStatParamaters.length - 1].split("-")[0]);
-                const lastTimeParameter = euroStatParamaters.length - 1;
-                const timeParameterToRemove = euroStatParamaters[lastTimeParameter].split("-");
-                timeParameterToRemove[1] = "";
-                euroStatParamaters[lastTimeParameter] = timeParameterToRemove.join("");
-                console.log("euroStatParamaters2", euroStatParamaters);
+                euroStatParamatersLocal[euroStatParamatersLocal.length - 1] += "-Q1";
+                console.log("euroStatParamaters1", euroStatParamatersLocal);
+                console.log("whatToRemove", euroStatParamatersLocal[euroStatParamatersLocal.length - 1].split("-")[0]);
+                console.log("euroStatParamaters2", euroStatParamatersLocal);
             }
-            else {
-                await getEuroStatResults(key);
-            }
-        }
+            const euroStatAPI = new eurostatAPI_1.EuroStatAPI(euroStatParamatersLocal.join(""), splitKey.join(""));
+            return euroStatAPI.euroStatApiResponse();
+        });
+        return await Promise.all(euroStatResult);
     };
-    console.log("matchingMetricKeywords(itDataSets)", matchingMetricKeywords(euroStatAPIDataSets_1.itDataSets));
+    const getDataResult = [];
     if (matchingMetricKeywords(euroStatAPIDataSets_1.empliymentDataSets) && matchingMetricKeywords(euroStatAPIDataSets_1.empliymentDataSets).length > 0) {
-        await getEuRoStatData(euroStatAPIDataSets_1.empliymentDataSets);
+        getDataResult.push(getEuRoStatData(euroStatAPIDataSets_1.empliymentDataSets));
     }
     if (matchingMetricKeywords(euroStatAPIDataSets_1.itDataSets) && matchingMetricKeywords(euroStatAPIDataSets_1.itDataSets).length > 0) {
-        await getEuRoStatData(euroStatAPIDataSets_1.itDataSets);
+        getDataResult.push(getEuRoStatData(euroStatAPIDataSets_1.itDataSets));
     }
+    const dataGatheringResults = await Promise.all(getDataResult);
     console.log("numberOfTimesRun");
     console.log("euroStatResult length before return:", euroStatResult.length);
     //  console.log("euroStatResult", euroStatResult)
     //  qwen2bObject["messages"] = [writerMessage, {role: "user", content: JSON.stringify(euroStatResult)}];
     return {
-        statistics: euroStatResult,
-        userQuestion: state.userQuestion
+        statistics: dataGatheringResults,
+        userQuestion: state.userQuestion,
     };
 };
 exports.plannerServiceWithValidation = plannerServiceWithValidation;

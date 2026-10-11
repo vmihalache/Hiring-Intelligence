@@ -1,4 +1,3 @@
-import { httpGateway } from "../httpGateway";
 import { classifyMessage, questionAndJson } from "./plannerStaticConsts";
 import {geminiContentPath, geminiObject, openrouterContentPath, openrouterObject} from "../agentData"
 import {basicAgentCall} from '../stateManagement'
@@ -6,12 +5,23 @@ import type { GraphState } from '../stateManagement';
 require('dotenv').config()
 
     let counter = 0
-    const agentRunner = async (agentMessage: any, content?: string, state?: GraphState) => {  
+    const agentRunner = async (agentMessage: any, state?: GraphState) => {  
        
-        geminiObject["messages"] = [agentMessage, {role: "user", content: content}]; 
-    const getAgentResponse = async () => {
+geminiObject["messages"] = [
+    agentMessage,
+    {
+        role: "user",
+        content: JSON.stringify({
+            userQuestion: state?.userQuestion,
+            statistics: state?.statistics
+        })
+    }
+];
+
+const getAgentResponse = async () => {
         const data = await basicAgentCall(agentMessage, state, geminiObject, geminiContentPath, process.env.ProdGeminiEndpoint, process.env.GEMINI_API_KEY); 
         console.log("=== Agent Response ===");
+        console.log(state)
         // const responseText = await agentResponse.text();
         console.log("Agent Response: ", data);
         // const data: { choices?: Array<{ message?: { content?: string }, finish_reason?: string }> } = JSON.parse(JSON.stringify(agentResponse.analysis));
@@ -25,7 +35,8 @@ require('dotenv').config()
         console.log("Finish Reason: ", finishReason1);
         console.log("Result: ", result);
         if (result != "") {
-        return { finishReason: finishReason1, result: result }
+        
+        return { finishReason: finishReason1, result: result, analysis: data.analysis };
         }
         if (result == "" && counter < 2) {
              console.log("Agent response is empty. Retrying... Attempt:", counter + 1);
@@ -40,12 +51,24 @@ require('dotenv').config()
 }
 
  export const checkResponseMethod = async (state: GraphState) => {
- const checkResponse = await agentRunner(classifyMessage, JSON.stringify({"userQuestion": state.userQuestion}), state); 
+ 
+ const checkResponse = await agentRunner(classifyMessage, state);
  console.log("=== Check Response ===");
  console.log(checkResponse)  
 
  let responseText = typeof checkResponse === "string" ? checkResponse : JSON.stringify(checkResponse)
  let jso = JSON.parse(responseText.replace(/```json|```/g, '').trim()).result
+ console.log("=== JSON Check Response2 ===");
+ console.log(JSON.parse(responseText.replace(/```json|```/g, '').trim()))
+ if (JSON.parse(jso).reuseFetch === "reuse") {
+    state.decision = "reuse"
+ }
+ else {
+    state.decision = "fetch"
+ }
+ console.log("=== Decision ===");
+ console.log(state.decision)
+ console.log(jso.reuseFetch)
 // let jso = JSON.parse(responseText).trim().result
  try {
     JSON.parse(jso)

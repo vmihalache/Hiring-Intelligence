@@ -1,5 +1,5 @@
 import { StateGraph, START, END, StateGraphArgs, MemorySaver } from "@langchain/langgraph";
-import { writer, contextLoader, graphStateChannelsChannels,checkQuestionNewStatistics, shouldContinue } from "./stateManagement";
+import { writer, contextLoader, graphStateChannelsChannels, shouldContinue } from "./stateManagement";
 import {plannerService} from './planner/plannerValidator'
 
 console.log("CHANNELS:", graphStateChannelsChannels);
@@ -10,14 +10,12 @@ export const graphBuilder = new StateGraph({ channels: graphStateChannelsChannel
   .addNode("contextLoader", contextLoader)
   .addNode("writer", writer)
   .addNode("plannerService", plannerService)
-  .addNode("checkQuestionNewStatistics", checkQuestionNewStatistics)
   .addEdge(START, "contextLoader")
-  .addEdge("contextLoader", "checkQuestionNewStatistics")
-  .addConditionalEdges('checkQuestionNewStatistics', shouldContinue, {
-    plannerService: 'plannerService',
-    writer: 'writer',
+  .addEdge("contextLoader", "plannerService")
+  .addConditionalEdges("plannerService", shouldContinue, {
+    fetch: 'plannerService',
+    reuse: 'writer',
   })
-  .addEdge("plannerService", "checkQuestionNewStatistics")
   .addEdge("writer", END)
  const checkpointer = new MemorySaver(); 
 export const intelligenceGraph = graphBuilder.compile( {checkpointer});

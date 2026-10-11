@@ -4,18 +4,9 @@ import wordsToNumbers from 'words-to-numbers';
 import type { GraphState } from '../stateManagement';
 import { plannerServiceWithValidation } from "./plannerIEuroStatIntegration";
 
-
-type PlannerResponse = {
-    countries?: string[];
-    // years can be a number, a string, or an array of numbers after normalization
-    years?: (number | string | number[])[];
-    metrics?: string;
-    valid?: boolean;
-    reason?: string;
-};
-
-const MaximumCountriesSpecification = {
-    check: (jsonReturnedByAgent: PlannerResponse | undefined) => {
+export const plannerService = async (state: GraphState) => {
+    const MaximumCountriesSpecification = {
+    check: (jsonReturnedByAgent:typeof state.plannerResponse | undefined) => {
         const count = jsonReturnedByAgent?.countries?.length ?? 0;
         console.log("=== Countries from Agent Response ===");
         console.log(count)
@@ -24,7 +15,7 @@ const MaximumCountriesSpecification = {
 };
 
 const MinimumYearSpecification = {
-      check: (jsonReturnedByAgent: PlannerResponse | undefined) => {
+      check: (jsonReturnedByAgent: typeof state.plannerResponse | undefined) => {
         const rawYears = jsonReturnedByAgent?.years ?? [];
         console.log("=== Years from Agent Response ===");
         console.log(rawYears);
@@ -38,20 +29,19 @@ const MinimumYearSpecification = {
 };
 
 const MetricExistsSpecification = {
-    check: (jsonReturnedByAgent: PlannerResponse | undefined) => {
+    check: (jsonReturnedByAgent: typeof state.plannerResponse | undefined) => {
         return Boolean(jsonReturnedByAgent?.metrics);
     }
 };
-export const plannerService = async (state: GraphState) => {
 
-    const jsonReturnedByAgent: PlannerResponse = await checkResponseMethod(state) ?? {
+    const jsonReturnedByAgent: typeof state.plannerResponse = await checkResponseMethod(state) ?? {
         countries: [],
         years: [],
-        metric: "",
+        metrics: [],
         valid: false,
         reason: "No valid response from agent."
     };
-    const jsonNormalizer = (jsonToUse: PlannerResponse) => {
+    const jsonNormalizer = (jsonToUse: typeof state.plannerResponse) => {
         jsonToUse.years?.forEach((val, index, arr) => {
             if (typeof val === "string" && (val.includes("last") || val.includes("previous")
             || val.includes("past") )) {
@@ -104,8 +94,26 @@ export const plannerService = async (state: GraphState) => {
     jsonReturnedByAgent.reason = "Invalid plannerValidator: " + failedRules.map(([rule]) => rule).join(", ");
 }
     console.log("=== Planner Validator Results ===");
+    console.log(state.decision)
     // console.log(jsonReturnedByAgent)
+    if (state.decision === "fetch"  || state.statistics.length === 0) {
     const plannerValidation = await plannerServiceWithValidation(jsonReturnedByAgent, state);
     console.log(plannerValidation)
-    return plannerValidation
+    state.decision = "reuse"
+    return {
+        statistics: plannerValidation.statistics,
+        userQuestion: plannerValidation.userQuestion,
+        decision: state.decision,
+        analysis: state.analysis,
+        plannerResponse: jsonReturnedByAgent
+    }
+}
+else {
+    return { 
+        statistics: state.statistics,
+        analysis: state.analysis,
+        userQuestion: state.userQuestion,    
+        decision: state.decision,
+    }
+}
 }

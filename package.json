@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "npx playwright test --project=chromium",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node dist/src/graphInit.js",
+    "start": "tsx src/graphInit.ts",
     "build": "tsc"
   },
   "devDependencies": {

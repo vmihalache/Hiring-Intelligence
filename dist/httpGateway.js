@@ -20,7 +20,12 @@ class HttpGateway {
         if (requestBody) {
             fetchOptions.body = JSON.stringify(requestBody);
         }
+        let initial = performance.now();
+        console.log("=== Timer Before ===");
         const response = await fetch(url, fetchOptions);
+        let final = performance.now();
+        console.log("=== Timer ===");
+        console.log(final - initial);
         // console.log("HTTP response status:", response.json())
         if (!response.ok) {
             const errorBody = await response.json();

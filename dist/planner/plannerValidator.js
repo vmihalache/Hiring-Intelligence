@@ -7,37 +7,37 @@ exports.plannerService = void 0;
 const agentCall_1 = require("./agentCall");
 const words_to_numbers_1 = __importDefault(require("words-to-numbers"));
 const plannerIEuroStatIntegration_1 = require("./plannerIEuroStatIntegration");
-const MaximumCountriesSpecification = {
-    check: (jsonReturnedByAgent) => {
-        const count = jsonReturnedByAgent?.countries?.length ?? 0;
-        console.log("=== Countries from Agent Response ===");
-        console.log(count);
-        return count < 3;
-    }
-};
-const MinimumYearSpecification = {
-    check: (jsonReturnedByAgent) => {
-        const rawYears = jsonReturnedByAgent?.years ?? [];
-        console.log("=== Years from Agent Response ===");
-        console.log(rawYears);
-        function isNumberArray(yearsProp) {
-            return yearsProp.every(item => typeof item === 'number' && !Number.isNaN(item));
-        }
-        if (!isNumberArray(rawYears) || rawYears.length === 0)
-            return false;
-        return Math.min(...rawYears) > 2024;
-    }
-};
-const MetricExistsSpecification = {
-    check: (jsonReturnedByAgent) => {
-        return Boolean(jsonReturnedByAgent?.metrics);
-    }
-};
 const plannerService = async (state) => {
+    const MaximumCountriesSpecification = {
+        check: (jsonReturnedByAgent) => {
+            const count = jsonReturnedByAgent?.countries?.length ?? 0;
+            console.log("=== Countries from Agent Response ===");
+            console.log(count);
+            return count < 3;
+        }
+    };
+    const MinimumYearSpecification = {
+        check: (jsonReturnedByAgent) => {
+            const rawYears = jsonReturnedByAgent?.years ?? [];
+            console.log("=== Years from Agent Response ===");
+            console.log(rawYears);
+            function isNumberArray(yearsProp) {
+                return yearsProp.every(item => typeof item === 'number' && !Number.isNaN(item));
+            }
+            if (!isNumberArray(rawYears) || rawYears.length === 0)
+                return false;
+            return Math.min(...rawYears) > 2024;
+        }
+    };
+    const MetricExistsSpecification = {
+        check: (jsonReturnedByAgent) => {
+            return Boolean(jsonReturnedByAgent?.metrics);
+        }
+    };
     const jsonReturnedByAgent = await (0, agentCall_1.checkResponseMethod)(state) ?? {
         countries: [],
         years: [],
-        metric: "",
+        metrics: [],
         valid: false,
         reason: "No valid response from agent."
     };
@@ -93,10 +93,28 @@ const plannerService = async (state) => {
         jsonReturnedByAgent.reason = "Invalid plannerValidator: " + failedRules.map(([rule]) => rule).join(", ");
     }
     console.log("=== Planner Validator Results ===");
+    console.log(state.decision);
     // console.log(jsonReturnedByAgent)
-    const plannerValidation = await (0, plannerIEuroStatIntegration_1.plannerServiceWithValidation)(jsonReturnedByAgent, state);
-    console.log(plannerValidation);
-    return plannerValidation;
+    if (state.decision === "fetch" || state.statistics.length === 0) {
+        const plannerValidation = await (0, plannerIEuroStatIntegration_1.plannerServiceWithValidation)(jsonReturnedByAgent, state);
+        console.log(plannerValidation);
+        state.decision = "reuse";
+        return {
+            statistics: plannerValidation.statistics,
+            userQuestion: plannerValidation.userQuestion,
+            decision: state.decision,
+            analysis: state.analysis,
+            plannerResponse: jsonReturnedByAgent
+        };
+    }
+    else {
+        return {
+            statistics: state.statistics,
+            analysis: state.analysis,
+            userQuestion: state.userQuestion,
+            decision: state.decision,
+        };
+    }
 };
 exports.plannerService = plannerService;
 //# sourceMappingURL=plannerValidator.js.map

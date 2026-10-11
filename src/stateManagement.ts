@@ -1,10 +1,5 @@
 import {END, StateGraph, StateGraphArgs } from "@langchain/langgraph";
 import { httpGateway } from "./httpGateway";
-import { countryComparison, trend, contradictory, weirdData } from "./mockedResponses/mockedResponses";
-import { graphBuilder } from "./graphBuilder";
-import { stat } from "node:fs";
-import {intelligenceGraph} from "./graphBuilder"; 
-import { v4 as uuidv4 } from "uuid";
 import {qwen2bObject, geminiObject, ollamaContentPath, geminiContentPath, openrouterObject, openrouterContentPath, contextLoaderMessage, writerMessage} from "./agentData"
 require('dotenv').config()
 
@@ -12,12 +7,21 @@ export interface GraphState {
     statistics: Array<Record<string, unknown>> | Record<string, unknown>;
     analysis: string;
     userQuestion: string;
-    isQuestionRelevantToStatistics: "plannerService" | "writer"
+    // isQuestionRelevantToStatistics: "plannerService" | "writer"
+    isQuestionRelevantToGraph: boolean
+    decision: "reuse" | "fetch",
+    plannerResponse: {
+    countries?: string[];
+    years?: (number | string | number[])[];
+    metrics?: string[];
+    valid?: boolean;
+    reason?: string;
+    }
 }   
 
 export function shouldContinue(state: GraphState) {
-    console.log("Routing decision value:", state.isQuestionRelevantToStatistics);
-    return state.isQuestionRelevantToStatistics;
+    console.log("Routing decision value:", state.decision);
+    return state.decision 
 }
 
 
@@ -34,33 +38,22 @@ export const graphStateChannelsChannels: StateGraphArgs<GraphState>["channels"] 
     reducer: (_, newUserQuestion) => newUserQuestion,
     default: () => ""
 },
-   isQuestionRelevantToStatistics: {
-    reducer: (_, newIsQuestionRelevantToStatistics: "plannerService" | "writer") => newIsQuestionRelevantToStatistics,
-    default: () => "plannerService"
+   isQuestionRelevantToGraph: {
+    reducer: (_, newIsQuestionRelevantToGraph: boolean) => newIsQuestionRelevantToGraph,
+    default: () => false
+},
+decision: {
+    reducer: (_, newDecision: "reuse" | "fetch") => newDecision,
+    default: () => "fetch"
+},
+plannerResponse: {
+    reducer: (_, newPlannerResponse: any) => newPlannerResponse,
+    default: () => ({})
 }
 }
-
- const userContent = (state: any) =>`
-    \`\`\`json
-    ${JSON.stringify(state.statistics, null, 2)}
-    \`\`\`
-User Question: ${state?.userQuestion}
-`
- 
 
 export const basicAgentCall = async (agentMessage: any, state?: Partial<GraphState>, agentObject?: any, contentPath?: (data: any) => string | Promise<string>, agentProdEndpoint?: string, apiKey?: string) => {
    
-
-    // const messages : any[] = [agentMessage, {role: "user", content: userContent}]; 
-        // agentObject["messages"] = [agentMessage, {role: "user", content: userContent}]; 
-
-    //  const qwen2bObject: GroqRequest = {
-    //         "model": "qwen/qwen3.6-27b",
-    //         "messages":messages,
-    //         "stream": false,
-    //         "reasoning_format": "hidden",
-    //         "max_tokens": 4000
-    //     }
     console.log(agentProdEndpoint)
     console.log(agentObject)
 
@@ -89,91 +82,18 @@ export const basicAgentCall = async (agentMessage: any, state?: Partial<GraphSta
                 analysis: content?.trim() ?? "No analysis available.",
                 userQuestion: state?.userQuestion,  
                 finishReason1: data?.choices?.[0]?.finish_reason
-                // result: content?.choices?.[0]?.message?.content || ""
     }
 })
 }
 
-// export async function planner(state: GraphState) {
-//     console.log("planner is running")
-//     return state
-// }
-const classifyMessage = {
-    role: "system",
-    content: `
-    - Analyze the user question and push the country names, metrics and years into the .
-    `
-}
-// export const plannerService = async () => {
-//   const jsonWithStatisticsData = {
-
-//   "intent": "compare_hiring",
-//   "countries": [
-//     "Romania",
-//     "Germany"
-//   ],
-//   "years": [
-//     2021,
-//     2022,
-//     2023,
-//     2024
-//   ],
-//   "metric": "employment_rate",
-//   "valid": true,
-//   "reason": ""
-// }
-//     // const question = "How does the employment rate in Romania compare to Germany from 2021 to 2024?"
-//     // const checkResponse = await basicAgentCall(classifyMessage, undefined, question);
-//     await basicAgentCall(classifyMessage, state, ollamaObject, ollamaContentPath, process.env.ProdGroqEndpoint);     
-//     return checkResponse
-// }
-
-
-
 export async function contextLoader(state: GraphState, config: any){
-    console.log("=== ContextLoader ===");
-    console.log(state);
-    // const history: any[] = [];
 
-    //     for await (const oldState of intelligenceGraph.getStateHistory(config)) {
-    //         history.push({
-    //         checkpointId: oldState.config.configurable?.checkpoint_id,
-    //         values: oldState.values,
-    //         next: oldState.next, // Nodes that are scheduled to run next (if any)
-    //         });
-    //     }
-    // console.log("History length:", history.length);
-    // console.log(history.length);
-    // console.log(history);
-    // if (history.length > 1) {
-    //     const pastStatistics = history[1].values.statistics;
-    //     const pastAnalysis = history[1].values.analysis;
-    //     const pastQuestion = history[1].values.userQuestion;
        return {
     statistics: state.statistics || {},
     analysis: state.analysis || "",
-    userQuestion: state.userQuestion
-  };
+    userQuestion: state.userQuestion,
+    decision: state.decision 
 }
-export async function checkQuestionNewStatistics(state: GraphState) {
-    console.log("=== CheckQuestionNewStatistics ===");
-    console.log(userContent(state))
-    // openrouterObject["messages"] = [contextLoaderMessage, {role: "user", content: userContent(state)}]; 
-    const requestPayload = {
-        ...openrouterObject,
-        messages: [contextLoaderMessage, { role: "user", content: userContent(state) }]
-    };  
-    console.log("requestPayload")
-    console.log(requestPayload)
-    const checkResponse = await basicAgentCall(contextLoaderMessage, state, requestPayload, openrouterContentPath,process.env.OPENROUTEREndpoint, process.env.OPENROUTER_API_KEY);
-    // const checkResponse = await basicAgentCall(contextLoaderMessage, state, qwen2bObject, ollamaContentPath, process.env.ProdGroqEndpoint, process.env.GROQ_API_KEY);
-    let checkbooleanValue = checkResponse.analysis.trim().toLowerCase();
-    let isQuestionRelevanStateValue = checkbooleanValue === "false" ? "plannerService" : "writer";
-    console.log("what is isQuestionRelevanStateValue")
-    console.log(isQuestionRelevanStateValue)
-    return {
-       isQuestionRelevantToStatistics: isQuestionRelevanStateValue
-    }
 }
 
 export async function writer(state: GraphState) {
@@ -187,7 +107,7 @@ export async function writer(state: GraphState) {
     // console.log(writerResponse)
     return {
         analysis: writerResponse.analysis,
-        isQuestionRelevantToStatistics: state.isQuestionRelevantToStatistics,
+        // isQuestionRelevantToStatistics: state.isQuestionRelevantToStatistics,
         userQuestion: state.userQuestion
     }
 }

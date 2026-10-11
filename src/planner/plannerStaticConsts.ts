@@ -11,6 +11,8 @@ export const jsonWithStatisticsData = {
 export const classifyMessage = {
     role: "system",
     content: `
+    - Given the existing statistics and this question,should we reuse them or fetch new ones?
+    - If we are reusing set reuseFetch to "reuse". Else set reuseFetch to "fetch"
     - Analyze the user question and push the country names, metrics and years into the jsonWithStatisticsData json and return it
     - Extract temporal expressions. Do not interpret relative temporal expressions
     - Correct country names that are misspelled.Do not invent, add, or return countries that do not exist."

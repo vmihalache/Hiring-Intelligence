@@ -6,6 +6,8 @@ class HttpGateway {
          console.log("URL:", url);
          console.log("METHOD:", method);
          console.log("REQUEST BODY:", requestBody);
+       
+         
         const fetchOptions: RequestInit = {
             method: method,
             headers: {
@@ -17,8 +19,12 @@ class HttpGateway {
         if (requestBody) {
             fetchOptions.body = JSON.stringify(requestBody);
         }
-        
+        let initial = performance.now()
+        console.log("=== Timer Before ===");
         const response = await fetch(url, fetchOptions);
+        let  final = performance.now()
+        console.log("=== Timer ===");
+        console.log(final-initial)
         // console.log("HTTP response status:", response.json())
        
        if (!response.ok) {
@@ -28,5 +34,7 @@ class HttpGateway {
     }
         return response;
     }
+   
+   
 }
 export const httpGateway = new HttpGateway();
