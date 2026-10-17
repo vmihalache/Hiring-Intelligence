@@ -31,7 +31,7 @@ const plannerService = async (state) => {
     };
     const MetricExistsSpecification = {
         check: (jsonReturnedByAgent) => {
-            return Boolean(jsonReturnedByAgent?.metrics);
+            return (jsonReturnedByAgent?.metrics?.length ?? 0) > 0;
         }
     };
     const jsonReturnedByAgent = await (0, agentCall_1.checkResponseMethod)(state) ?? {
@@ -92,27 +92,51 @@ const plannerService = async (state) => {
         jsonReturnedByAgent.valid = false;
         jsonReturnedByAgent.reason = "Invalid plannerValidator: " + failedRules.map(([rule]) => rule).join(", ");
     }
+    else {
+        jsonReturnedByAgent.valid = true;
+        jsonReturnedByAgent.reason = "Valid plannerValidator";
+    }
     console.log("=== Planner Validator Results ===");
     console.log(state.decision);
-    // console.log(jsonReturnedByAgent)
-    if (state.decision === "fetch" || state.statistics.length === 0) {
-        const plannerValidation = await (0, plannerIEuroStatIntegration_1.plannerServiceWithValidation)(jsonReturnedByAgent, state);
-        console.log(plannerValidation);
-        state.decision = "reuse";
+    console.log("reason");
+    console.log(jsonReturnedByAgent);
+    if (jsonReturnedByAgent.valid) {
+        if (state.decision === "fetch" || state.statistics.length === 0) {
+            console.log("CURRENT QUESTION:", state.userQuestion);
+            console.log("CURRENT DECISION:", state.decision);
+            console.log("EXISTING STATISTICS:", JSON.stringify(state.statistics));
+            const plannerValidation = await (0, plannerIEuroStatIntegration_1.plannerServiceWithValidation)(jsonReturnedByAgent, state);
+            console.log("PLANNER VALIDATION RESULT:", JSON.stringify(plannerValidation, null, 2));
+            // console.log(plannerValidation)
+            state.decision = "reuse";
+            return {
+                statistics: plannerValidation.statistics,
+                userQuestion: plannerValidation.userQuestion,
+                decision: state.decision,
+                analysis: state.analysis,
+                plannerResponse: jsonReturnedByAgent
+            };
+        }
+        else {
+            console.log("DECISION BEFORE FETCH/REUSE:", state.decision);
+            console.log("PLANNER COUNTRIES:", jsonReturnedByAgent.countries);
+            console.log("EXISTING STATISTICS:", JSON.stringify(state.statistics));
+            return {
+                statistics: state.statistics,
+                analysis: state.analysis,
+                userQuestion: state.userQuestion,
+                decision: state.decision,
+            };
+        }
+    }
+    else {
+        state.decision = "invalid";
         return {
-            statistics: plannerValidation.statistics,
-            userQuestion: plannerValidation.userQuestion,
+            userQuestion: state.userQuestion,
+            statistics: state.statistics,
             decision: state.decision,
             analysis: state.analysis,
             plannerResponse: jsonReturnedByAgent
-        };
-    }
-    else {
-        return {
-            statistics: state.statistics,
-            analysis: state.analysis,
-            userQuestion: state.userQuestion,
-            decision: state.decision,
         };
     }
 };

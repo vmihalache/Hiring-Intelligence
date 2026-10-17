@@ -49,7 +49,8 @@ const plannerServiceWithValidation = async (plannerResult, state) => {
     const dataGatheringResults = await Promise.all(getDataResult);
     console.log("numberOfTimesRun");
     console.log("euroStatResult length before return:", euroStatResult.length);
-    //  console.log("euroStatResult", euroStatResult)
+    // console.log("euroStatResult2", getDataResult)
+    console.log("euroStatResult2", JSON.stringify(dataGatheringResults, null, 2));
     //  qwen2bObject["messages"] = [writerMessage, {role: "user", content: JSON.stringify(euroStatResult)}];
     return {
         statistics: dataGatheringResults,

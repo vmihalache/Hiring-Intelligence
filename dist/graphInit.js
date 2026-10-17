@@ -33,10 +33,17 @@ app.post("/mockJson", async (req, res) => {
         console.log("\n=====END======");
     }
     catch (error) {
-        console.error("Error occurred while invoking graph:", error);
+        const details = error instanceof Error ? error.message : String(error);
+        console.log("RAW ERROR:", details);
+        console.log("RAW ERROR2:", error);
+        const messages = {
+            numberOfCountries: "Please compare no more than two countries at a time.",
+            metricExists: "I couldn't identify a valid metric to compare. Please try a different metric.",
+            minimumYear: "The requested years are invalid. Please try again with valid years. The minimum is 2025.",
+        };
+        const reason = details.replace("Invalid plannerValidator: ", "");
         return res.status(500).json({
-            error: "Graph execution failed",
-            details: error instanceof Error ? error.message : String(error),
+            error: messages[reason] ?? "I couldn't process your request. Please try again."
         });
     }
     // res.send("Check the console for the output!");

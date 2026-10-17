@@ -35,6 +35,10 @@ exports.graphStateChannelsChannels = {
     plannerResponse: {
         reducer: (_, newPlannerResponse) => newPlannerResponse,
         default: () => ({})
+    },
+    error: {
+        reducer: (_, newError) => newError,
+        default: () => ""
     }
 };
 const basicAgentCall = async (agentMessage, state, agentObject, contentPath, agentProdEndpoint, apiKey) => {
@@ -78,6 +82,9 @@ async function writer(state) {
     console.log(agentData_1.qwen2bObject);
     const writerResponse = await (0, exports.basicAgentCall)(agentData_1.writerMessage, state, agentData_1.qwen2bObject, agentData_1.ollamaContentPath, process.env.ProdGroqEndpoint, process.env.GROQ_API_KEY);
     // console.log(writerResponse)
+    if (state.decision === "invalid") {
+        throw state.plannerResponse.reason || "Invalid planner response";
+    }
     return {
         analysis: writerResponse.analysis,
         // isQuestionRelevantToStatistics: state.isQuestionRelevantToStatistics,

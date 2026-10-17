@@ -16,6 +16,7 @@ exports.graphBuilder = new langgraph_1.StateGraph({ channels: stateManagement_1.
     .addConditionalEdges("plannerService", stateManagement_1.shouldContinue, {
     fetch: 'plannerService',
     reuse: 'writer',
+    invalid: "writer",
 })
     .addEdge("writer", langgraph_1.END);
 const checkpointer = new langgraph_1.MemorySaver();

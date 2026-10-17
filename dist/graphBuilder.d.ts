@@ -4,7 +4,7 @@ export declare const graphBuilder: StateGraph<unknown, import("./stateManagement
         statistics: Record<string, unknown> | Record<string, unknown>[];
         analysis: string;
         userQuestion: string;
-        decision: "reuse" | "fetch";
+        decision: "reuse" | "fetch" | "invalid";
     };
     writer: {
         analysis: any;
@@ -17,33 +17,35 @@ export declare const intelligenceGraph: import("@langchain/langgraph").CompiledS
     analysis: string;
     userQuestion: string;
     isQuestionRelevantToGraph: boolean;
-    decision: "reuse" | "fetch";
+    decision: "reuse" | "fetch" | "invalid";
+    error?: string;
     plannerResponse: {
         countries?: string[];
         years?: (number | string | number[])[];
         metrics?: string[];
-        valid?: boolean;
         reason?: string;
+        valid?: boolean;
     };
 }, {
     statistics?: Array<Record<string, unknown>> | Record<string, unknown>;
     analysis?: string;
     userQuestion?: string;
     isQuestionRelevantToGraph?: boolean;
-    decision?: "reuse" | "fetch";
+    decision?: "reuse" | "fetch" | "invalid";
+    error?: string;
     plannerResponse?: {
         countries?: string[];
         years?: (number | string | number[])[];
         metrics?: string[];
-        valid?: boolean;
         reason?: string;
+        valid?: boolean;
     };
 }, "__start__" | "writer" | "contextLoader" | "plannerService", import("@langchain/langgraph").StateDefinition, import("@langchain/langgraph").StateDefinition, import("@langchain/langgraph").StateDefinition, {
     contextLoader: {
         statistics: Record<string, unknown> | Record<string, unknown>[];
         analysis: string;
         userQuestion: string;
-        decision: "reuse" | "fetch";
+        decision: "reuse" | "fetch" | "invalid";
     };
     writer: {
         analysis: any;

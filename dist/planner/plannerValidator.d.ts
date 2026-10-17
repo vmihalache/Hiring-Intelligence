@@ -15,14 +15,26 @@ export declare const plannerService: (state: GraphState) => Promise<{
         countries?: string[];
         years?: (number | string | number[])[];
         metrics?: string[];
-        valid?: boolean;
         reason?: string;
+        valid?: boolean;
     };
 } | {
     statistics: Record<string, unknown> | Record<string, unknown>[];
     analysis: string;
     userQuestion: string;
-    decision: "reuse";
+    decision: "reuse" | "invalid";
     plannerResponse?: never;
+} | {
+    userQuestion: string;
+    statistics: Record<string, unknown> | Record<string, unknown>[];
+    decision: "invalid";
+    analysis: string;
+    plannerResponse: {
+        countries?: string[];
+        years?: (number | string | number[])[];
+        metrics?: string[];
+        reason?: string;
+        valid?: boolean;
+    };
 }>;
 //# sourceMappingURL=plannerValidator.d.ts.map

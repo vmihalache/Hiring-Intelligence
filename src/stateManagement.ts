@@ -9,13 +9,14 @@ export interface GraphState {
     userQuestion: string;
     // isQuestionRelevantToStatistics: "plannerService" | "writer"
     isQuestionRelevantToGraph: boolean
-    decision: "reuse" | "fetch",
+    decision: "reuse" | "fetch"  | "invalid",
+    error?: string;
     plannerResponse: {
     countries?: string[];
     years?: (number | string | number[])[];
     metrics?: string[];
-    valid?: boolean;
     reason?: string;
+    valid?: boolean;
     }
 }   
 
@@ -49,9 +50,12 @@ decision: {
 plannerResponse: {
     reducer: (_, newPlannerResponse: any) => newPlannerResponse,
     default: () => ({})
+},
+error: {
+    reducer: (_, newError: string) => newError,
+    default: () => ""   
 }
 }
-
 export const basicAgentCall = async (agentMessage: any, state?: Partial<GraphState>, agentObject?: any, contentPath?: (data: any) => string | Promise<string>, agentProdEndpoint?: string, apiKey?: string) => {
    
     console.log(agentProdEndpoint)
@@ -105,6 +109,9 @@ export async function writer(state: GraphState) {
     console.log(qwen2bObject)
     const writerResponse = await basicAgentCall(writerMessage, state, qwen2bObject, ollamaContentPath, process.env.ProdGroqEndpoint, process.env.GROQ_API_KEY);    
     // console.log(writerResponse)
+    if (state.decision === "invalid") {
+       throw state.plannerResponse.reason || "Invalid planner response";
+    }
     return {
         analysis: writerResponse.analysis,
         // isQuestionRelevantToStatistics: state.isQuestionRelevantToStatistics,

@@ -15,6 +15,7 @@ export const graphBuilder = new StateGraph({ channels: graphStateChannelsChannel
   .addConditionalEdges("plannerService", shouldContinue, {
     fetch: 'plannerService',
     reuse: 'writer',
+    invalid: "writer",
   })
   .addEdge("writer", END)
  const checkpointer = new MemorySaver(); 

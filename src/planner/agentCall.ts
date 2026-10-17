@@ -60,6 +60,7 @@ const getAgentResponse = async () => {
  let jso = JSON.parse(responseText.replace(/```json|```/g, '').trim()).result
  console.log("=== JSON Check Response2 ===");
  console.log(JSON.parse(responseText.replace(/```json|```/g, '').trim()))
+ console.log(JSON.parse(jso).valid)
  if (JSON.parse(jso).reuseFetch === "reuse") {
     state.decision = "reuse"
  }
