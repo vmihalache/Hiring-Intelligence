@@ -42,8 +42,17 @@ app.post("/mockJson", async (req, res) => {
             minimumYear: "The requested years are invalid. Please try again with valid years. The minimum is 2025.",
         };
         const reason = details.replace("Invalid plannerValidator: ", "");
+        const accumulatedReasons = [];
+        reason.trim().split(",").forEach((rule) => {
+            rule.split(" ").forEach((subRule) => {
+                if (messages[subRule]) {
+                    accumulatedReasons.push(messages[subRule]);
+                }
+            });
+        });
+        console.log("accumulatedReasons", accumulatedReasons);
         return res.status(500).json({
-            error: messages[reason] ?? "I couldn't process your request. Please try again."
+            error: accumulatedReasons.length > 0 ? accumulatedReasons : ["I couldn't process your request. Please try again."]
         });
     }
     // res.send("Check the console for the output!");
